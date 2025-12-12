@@ -149,6 +149,11 @@ void MenuPrincipal() {
 
     case 5:
         printf("\nEncerrando o jogo...\n");
+        if (territorios != NULL) {
+        free(territorios);
+        territorios = NULL;
+        printf("Memoria liberada com sucesso!\n");
+    }
         exit(0);
         break;
 
@@ -166,9 +171,14 @@ void CadastrarTerritorio(){
     {
         printf("Digite o nome do território :\n");
         fgets(territorios[totalTerritorios].nome, MAX_NOME, stdin);
+        territorios[totalTerritorios].nome[strcspn(territorios[totalTerritorios].nome, "\n")] = '\0';
+
 
         printf("Digite a cor do exército :\n");
         fgets(territorios[totalTerritorios].cor_Exercito, MAX_COR, stdin);
+        territorios[totalTerritorios].cor_Exercito[strcspn(territorios[totalTerritorios].cor_Exercito, "\n")] = '\0';
+
+
 
         printf("Digite a quantidade de tropas :\n");
         scanf("%d", &territorios[totalTerritorios].numero_Tropas);
@@ -192,9 +202,9 @@ void ListarTerritorios() {
     for (int i = 0; i < totalTerritorios; i++)
     { 
         printf("==== Territorio(%d) ====\n", totalTerritorios);
-        printf("Nome do território :%s", territorios[i].nome);
-        printf("Cor do exército :%s", territorios[i].cor_Exercito);
-        printf("Tropas :%d\n", territorios[i].numero_Tropas);
+        printf("Nome do território : %s ", territorios[i].nome);
+        printf("Cor do exército : %s ", territorios[i].cor_Exercito);
+        printf("Tropas : %d \n", territorios[i].numero_Tropas);
         printf("=========================\n");
         printf("\n");
     }
@@ -324,11 +334,13 @@ void simularAtaque(int origem, int destino) {
            territorios[origem].nome,
            territorios[origem].cor_Exercito,
            territorios[origem].numero_Tropas);
+    printf("\n");
     
     printf("Defensor: %s (%s) - %d tropas\n\n",
            territorios[destino].nome,
            territorios[destino].cor_Exercito,
            territorios[destino].numero_Tropas);
+    printf("\n");
 
     printf("Pressione ENTER para rolar os dados...");
     getchar();
