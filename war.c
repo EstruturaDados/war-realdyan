@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <locale.h>
-
+#include <time.h>
 // --- Constantes Globais ---
 // Definem valores fixos para o número de territórios, missões e tamanho máximo de strings, facilitando a manutenção.
 #define MAX_NOME 50
@@ -35,7 +35,7 @@ typedef struct {
 } Territorio;
 
 // 
-Territorio territorios[MAX_TERRITORIOS];
+Territorio *territorios = NULL;
 int totalTerritorios = 0;
 
 // --- Declarar Funções ---
@@ -49,6 +49,11 @@ void CadastrarTerritorio();
 void ListarTerritorios();
 //Função Exibir Mapa
 void exibirMapa();
+//Função SimularAtaque
+void simularAtaque(int origem, int destino);
+// Função Fase de ataque
+void faseDeAtaque();
+
 // --- Função Principal (main) ---
 // Função principal que orquestra o fluxo do jogo, chamando as outras funções em ordem.
 int main() {
@@ -57,7 +62,15 @@ int main() {
     // - Define o locale para português.
     setlocale(LC_ALL, "Portuguese");
     // - Inicializa a semente para geração de números aleatórios com base no tempo atual.
+    srand(time(NULL));
     // - Aloca a memória para o mapa do mundo e verifica se a alocação foi bem-sucedida.
+     printf("Alocando memória para %d territórios...\n", MAX_TERRITORIOS);
+     territorios = (Territorio *)calloc(MAX_TERRITORIOS, sizeof(Territorio));
+     if (territorios == NULL) {
+        printf("ERRO: Falha ao alocar memória!\n");
+        printf("O sistema não tem memória disponível.\n");
+        return 1;
+     }
     // - Preenche os territórios com seus dados iniciais (tropas, donos, etc.).
     
 
@@ -115,7 +128,7 @@ void MenuPrincipal() {
     switch (opcao)
     {
     case 1:
-        printf("Ainda não disponível !\n");
+        faseDeAtaque();
         break;
     
     case 2:
@@ -238,12 +251,190 @@ void exibirMapa() {
 // faseDeAtaque():
 // Gerencia a interface para a ação de ataque, solicitando ao jogador os territórios de origem e destino.
 // Chama a função simularAtaque() para executar a lógica da batalha.
+// faseDeAtaque()
+void faseDeAtaque() {
+    char continuar;
+    
+    do {
+        printf("\nFASE DE ATAQUE\n");
+        printf("--------------------------------------\n\n");
 
+        exibirMapa();
+
+        int origem, destino;
+        
+        printf("\nEscolha o territorio de ORIGEM (atacante) [1-%d]: ", totalTerritorios);
+        scanf("%d", &origem);
+        limparBufferEntrada();
+
+        if (origem < 1 || origem > totalTerritorios) {
+            printf("Territorio invalido! Deve ser entre 1 e %d.\n", totalTerritorios);
+            continue;
+        }
+
+        printf("Escolha o territorio de DESTINO (defensor) [1-%d]: ", totalTerritorios);
+        scanf("%d", &destino);
+        limparBufferEntrada();
+
+        if (destino < 1 || destino > totalTerritorios) {
+            printf("Territorio invalido! Deve ser entre 1 e %d.\n", totalTerritorios);
+            continue;
+        }
+
+        simularAtaque(origem - 1, destino - 1);
+        
+        printf("\nDeseja realizar outro ataque? (s/n): ");
+        scanf(" %c", &continuar);
+        limparBufferEntrada();
+        
+    } while (continuar == 's' || continuar == 'S');
+    
+    printf("\nVoltando ao menu principal...\n");
+}
+
+// Função para rolar um dado
+int rolarDado() {
+    return 1 + rand() % 6;
+}
 // simularAtaque():
 // Executa a lógica de uma batalha entre dois territórios.
 // Realiza validações, rola os dados, compara os resultados e atualiza o número de tropas.
 // Se um território for conquistado, atualiza seu dono e move uma tropa.
+void simularAtaque(int origem, int destino) {
+    printf("\nSIMULANDO COMBATE - TURNO\n");
+    printf("--------------------------------------\n\n");
 
+    if (origem == destino) {
+        printf("Nao pode atacar o proprio territorio!\n");
+        return;
+    }
+
+    if (territorios[origem].numero_Tropas < 1) {
+        printf("Territorio nao tem tropas para atacar!\n");
+        return;
+    }
+
+    if (strcmp(territorios[origem].cor_Exercito, territorios[destino].cor_Exercito) == 0) {
+        printf("Nao pode atacar territorio do mesmo exercito!\n");
+        return;
+    }
+
+    printf("SITUACAO ANTES DA BATALHA:\n");
+    printf("Atacante: %s (%s) - %d tropas\n",
+           territorios[origem].nome,
+           territorios[origem].cor_Exercito,
+           territorios[origem].numero_Tropas);
+    
+    printf("Defensor: %s (%s) - %d tropas\n\n",
+           territorios[destino].nome,
+           territorios[destino].cor_Exercito,
+           territorios[destino].numero_Tropas);
+
+    printf("Pressione ENTER para rolar os dados...");
+    getchar();
+
+    int dadoAtacante = rolarDado();
+    int dadoDefensor = rolarDado();
+
+    printf("\nAtacante rolou: %d\n", dadoAtacante);
+    printf("Defensor rolou: %d\n", dadoDefensor);
+    
+    printf("\nPressione ENTER para ver o resultado...");
+    getchar();
+
+    printf("\n");
+    
+    if (dadoAtacante > dadoDefensor) {
+        printf("ATACANTE VENCEU!\n\n");
+        territorios[destino].numero_Tropas--;
+        printf("%s perdeu 1 tropa! (%d restantes)\n",
+               territorios[destino].nome,
+               territorios[destino].numero_Tropas);
+        
+        if (territorios[destino].numero_Tropas == 0) {
+            printf("\nTERRITORIO CONQUISTADO!\n");
+            printf("%s conquistou %s!\n\n",
+                   territorios[origem].cor_Exercito,
+                   territorios[destino].nome);
+            
+            printf("Pressione ENTER para transferir tropas...");
+            getchar();
+            
+            strcpy(territorios[destino].cor_Exercito, territorios[origem].cor_Exercito);
+            territorios[destino].numero_Tropas = 1;
+            territorios[origem].numero_Tropas--;
+            printf("\n1 tropa transferida.\n");
+            printf("%s agora pertence a %s\n", 
+                   territorios[destino].nome,
+                   territorios[destino].cor_Exercito);
+        }
+    }
+    else if (dadoDefensor > dadoAtacante) {
+        printf("DEFENSOR VENCEU!\n\n");
+        territorios[origem].numero_Tropas--;
+        printf("%s perdeu 1 tropa! (%d restantes)\n",
+               territorios[origem].nome,
+               territorios[origem].numero_Tropas);
+        
+        if (territorios[origem].numero_Tropas == 0) {
+            printf("\nATACANTE PERDEU O TERRITORIO!\n");
+            printf("%s perdeu %s para %s!\n\n",
+                   territorios[origem].cor_Exercito,
+                   territorios[origem].nome,
+                   territorios[destino].cor_Exercito);
+            
+            printf("Pressione ENTER para contra-ataque...");
+            getchar();
+            
+            strcpy(territorios[origem].cor_Exercito, territorios[destino].cor_Exercito);
+            territorios[origem].numero_Tropas = 1;
+            territorios[destino].numero_Tropas--;
+            printf("\n1 tropa do defensor ocupou o territorio.\n");
+            printf("%s agora pertence a %s\n",
+                   territorios[origem].nome,
+                   territorios[origem].cor_Exercito);
+        }
+    }
+    else {
+        printf("EMPATE! (favorece o atacante)\n\n");
+        territorios[destino].numero_Tropas--;
+        printf("%s perdeu 1 tropa! (%d restantes)\n",
+               territorios[destino].nome,
+               territorios[destino].numero_Tropas);
+        
+        if (territorios[destino].numero_Tropas == 0) {
+            printf("\nTERRITORIO CONQUISTADO!\n");
+            printf("%s conquistou %s!\n\n",
+                   territorios[origem].cor_Exercito,
+                   territorios[destino].nome);
+            
+            printf("Pressione ENTER para transferir tropas...");
+            getchar();
+            
+            strcpy(territorios[destino].cor_Exercito, territorios[origem].cor_Exercito);
+            territorios[destino].numero_Tropas = 1;
+            territorios[origem].numero_Tropas--;
+            printf("\n1 tropa transferida.\n");
+            printf("%s agora pertence a %s\n",
+                   territorios[destino].nome,
+                   territorios[destino].cor_Exercito);
+        }
+    }
+
+    printf("\nSITUAÇÃO FINAL:\n");
+    printf("%s (%s): %d tropas\n",
+           territorios[origem].nome,
+           territorios[origem].cor_Exercito,
+           territorios[origem].numero_Tropas);
+    printf("%s (%s): %d tropas\n",
+           territorios[destino].nome,
+           territorios[destino].cor_Exercito,
+           territorios[destino].numero_Tropas);
+    
+    printf("\nPressione ENTER para continuar...");
+    getchar();
+    printf("--------------------------------------\n");
+}
 // sortearMissao():
 // Sorteia e retorna um ID de missão aleatório para o jogador.
 
