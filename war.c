@@ -394,7 +394,7 @@ void verificarMissao(const Territorio *territorios, int totalTerritorios, const 
         printf("\n=== Missão Cumprida! ===\n");
         printf("O exército %s foi completamente eliminado!\n", corAlvo);
         printf("Vitória do exército %s!\n\n", corAtacante);
-        missaoAtiva = 0;
+        *missaoAtiva = 0;
     } else {
         printf("\n=== Missão em andamento ===\n");
         printf("  O exército %s ainda possui %d território(s).\n", corAlvo, territoriosAlvo);
@@ -589,7 +589,7 @@ void sortearMissao(const Territorio *territorios, int totalTerritorios, char *co
 // verificarVitoria():
 // Verifica se a cor alvo foi eliminada do mapa
 void verificarVitoria(const Territorio *territorios, int totalTerritorios, const char *corAtacante, const char *corAlvo, int *missaoAtiva) {
-    if (!missaoAtiva) {
+    if (!*missaoAtiva) {
         printf("Você precisa iniciar uma missão primeiro (opção 1 do Menu principal - Jogar)\n");
         return;
     }
@@ -614,7 +614,7 @@ void verificarVitoria(const Territorio *territorios, int totalTerritorios, const
         printf("O exército %s foi completamente eliminado!\n", corAlvo);
         printf("\n============================================\n\n");
         
-        missaoAtiva = 0;
+        *missaoAtiva = 0;
     } else {
         printf("\nMissão ainda em andamento!\n");
         printf("Missão: %s deve destruir %s\n", corAtacante, corAlvo);
